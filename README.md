@@ -9,16 +9,18 @@ This is baby's first go module, so please: PR's welcome!
 Verify a member's token:
 
 ```go
-import "github.com/f3ndot/go-memberstack-admin/admin"
+package main
+
+import (
+	"fmt"
+
+  "github.com/f3ndot/go-memberstack-admin/admin"
+)
 
 func main() {
-  token, err = admin.VerifyToken("eyJhbGc...jEifQ")
+  a := admin.NewMemberstackAdmin()
+  token, err := a.VerifyToken("eyJhbGc...jEifQ")
 
-  if err != nil; errors.Is(admin.ErrInvalidSignature) {
-    log.Fatal(err)
-  }
-
-  log.Println("JWT verified token is ", token)
-  // ...
+	fmt.Println("is valid:", token.Valid, ", error:", err)
 }
 ```
