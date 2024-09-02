@@ -6,6 +6,8 @@ This is baby's first go module, so please: PR's welcome!
 
 ## Usage
 
+_Check out [cmd/examples](./cmd/examples/) for detailed usage_
+
 Verify a member's token:
 
 ```go
