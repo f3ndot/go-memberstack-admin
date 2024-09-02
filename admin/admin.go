@@ -27,7 +27,7 @@ type MemberstackAdmin struct {
 	jwksKeyfunc      keyfunc.Keyfunc
 }
 
-func (a MemberstackAdmin) FetchJwks() string {
+func (a MemberstackAdmin) fetchJwks() string {
 	slog.Info("Fetching JWKS...", "url", a.Options.JWKSEndpoint)
 	res, err := http.Get(a.Options.JWKSEndpoint)
 	if err != nil {
@@ -49,18 +49,18 @@ func (a MemberstackAdmin) FetchJwks() string {
 	return body
 }
 
-func (a *MemberstackAdmin) HttpJwksResponse() string {
+func (a *MemberstackAdmin) getHttpJwksResponse() string {
 	// TODO: take advantage of jwkset's own HTTP refreshing goroutine features
 	if a.httpJwksResponse == "" {
-		a.httpJwksResponse = a.FetchJwks()
+		a.httpJwksResponse = a.fetchJwks()
 	}
 	return a.httpJwksResponse
 }
 
-func (a *MemberstackAdmin) JwksKeyfunc() keyfunc.Keyfunc {
+func (a *MemberstackAdmin) getJwksKeyfunc() keyfunc.Keyfunc {
 	if a.jwksKeyfunc == nil {
 		slog.Info("No keyfunc cached. Getting it now")
-		k, err := keyfunc.NewJWKSetJSON(json.RawMessage(a.HttpJwksResponse()))
+		k, err := keyfunc.NewJWKSetJSON(json.RawMessage(a.getHttpJwksResponse()))
 		if err != nil {
 			slog.Error("Failed to create a keyfunc.Keyfunc", "error", err)
 			panic(err)
@@ -71,7 +71,7 @@ func (a *MemberstackAdmin) JwksKeyfunc() keyfunc.Keyfunc {
 }
 
 func (a *MemberstackAdmin) VerifyToken(tokenString string) (*jwt.Token, error) {
-	token, err := a.jwtParser.Parse(tokenString, a.JwksKeyfunc().Keyfunc)
+	token, err := a.jwtParser.Parse(tokenString, a.getJwksKeyfunc().Keyfunc)
 	return token, err
 }
 
