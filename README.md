@@ -18,7 +18,9 @@ import (
 )
 
 func main() {
-  a := admin.NewMemberstackAdmin()
+  a := admin.NewMemberstackAdmin(admin.Options{
+    MemberstackAppId: "app_clzb..."
+  })
   token, err := a.VerifyToken("eyJhbGc...jEifQ")
 
 	fmt.Println("is valid:", token.Valid, ", error:", err)
