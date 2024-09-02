@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	audPtr := flag.String("aud", "", "The audience (Memberstack App ID) of the token")
+	audPtr := flag.String("aud", "", "Verify the Memberstack App ID (ie JWT 'aud') the token should belong to")
 	flag.Parse()
 	if flag.NArg() != 1 {
 		fmt.Printf("Usage: %s [OPTIONS] <encoded token>\n", filepath.Base(os.Args[0]))
@@ -19,11 +19,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	options := admin.Options{}
-	if *audPtr != "" {
-		options.Audience = *audPtr
-	}
-	a := admin.NewMemberstackAdmin(options)
+	a := admin.NewMemberstackAdmin(admin.Options{
+		MemberstackAppId: *audPtr,
+	})
 
 	tokenString := flag.Arg(0)
 

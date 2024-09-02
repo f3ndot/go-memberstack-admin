@@ -15,9 +15,9 @@ const JWKS_ENDPOINT = "http://member-jwt.s3-website-us-east-1.amazonaws.com/"
 const ISSUER = "https://api.memberstack.com"
 
 type Options struct {
-	JWKSEndpoint string
-	Issuer       string
-	Audience     string
+	JWKSEndpoint     string
+	Issuer           string
+	MemberstackAppId string
 }
 
 type MemberstackAdmin struct {
@@ -86,8 +86,8 @@ func NewMemberstackAdmin(o Options) MemberstackAdmin {
 	ma := MemberstackAdmin{Options: o}
 
 	jwtParserOpts := []jwt.ParserOption{jwt.WithIssuer(o.Issuer)}
-	if o.Audience != "" {
-		jwtParserOpts = append(jwtParserOpts, jwt.WithAudience(o.Audience))
+	if o.MemberstackAppId != "" {
+		jwtParserOpts = append(jwtParserOpts, jwt.WithAudience(o.MemberstackAppId))
 	}
 	// TODO: Should my jwtParser also be a pointer?
 	ma.jwtParser = *jwt.NewParser(jwtParserOpts...)
