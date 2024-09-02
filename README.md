@@ -8,7 +8,9 @@ This is baby's first go module, so please: PR's welcome!
 
 _Check out [cmd/examples](./cmd/examples/) for detailed usage_
 
-Verify a member's token:
+### Verify Token
+
+To verify a member's token:
 
 ```go
 a := admin.NewMemberstackAdmin(admin.Options{
@@ -17,4 +19,10 @@ a := admin.NewMemberstackAdmin(admin.Options{
 token, err := a.VerifyToken("eyJhbGc...jEifQ")
 
 fmt.Println("is valid:", token.Valid, ", error:", err)
+```
+
+Or via the examples:
+
+```bash
+go run cmd/examples/verify_token.go -aud app_clzb... eyJhbGc...jEifQ
 ```
