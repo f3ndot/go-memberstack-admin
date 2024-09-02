@@ -4,25 +4,15 @@ A [go](http://www.golang.org/) (or 'golang' for search engine friendliness) port
 
 This is baby's first go module, so please: PR's welcome!
 
-## Usage (likely)
+## Usage
 
 Verify a member's token:
 
 ```go
-package main
+a := admin.NewMemberstackAdmin(admin.Options{
+	MemberstackAppId: "app_clzb..."
+})
+token, err := a.VerifyToken("eyJhbGc...jEifQ")
 
-import (
-	"fmt"
-
-  "github.com/f3ndot/go-memberstack-admin/admin"
-)
-
-func main() {
-  a := admin.NewMemberstackAdmin(admin.Options{
-    MemberstackAppId: "app_clzb..."
-  })
-  token, err := a.VerifyToken("eyJhbGc...jEifQ")
-
-	fmt.Println("is valid:", token.Valid, ", error:", err)
-}
+fmt.Println("is valid:", token.Valid, ", error:", err)
 ```
