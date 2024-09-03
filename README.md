@@ -34,6 +34,6 @@ go run cmd/examples/verify_token.go -aud app_clzb... eyJhbGc...jEifQ
 
 - [x] Tests 😅
 - [ ] Feature parity with `@memberstack/admin`
-- [ ] Add own errors for fetching JWKS failure conditions
+- [x] Add own errors for fetching JWKS failure conditions
 - [ ] Improve JWKS lifecycle (refreshing)
 - [ ] Maybe: use [lestrrat-go/jwx](https://github.com/lestrrat-go/jwx) over MicahParks' keyfunc and jwkset
