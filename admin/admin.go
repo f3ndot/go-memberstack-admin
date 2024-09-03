@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/MicahParks/keyfunc/v3"
 	"github.com/golang-jwt/jwt/v5"
@@ -28,9 +29,10 @@ type MemberstackJwtClaims struct {
 }
 
 type Options struct {
-	JWKSEndpoint     string
-	Issuer           string
-	MemberstackAppId string
+	HTTPTimeoutSeconds int
+	JWKSEndpoint       string
+	Issuer             string
+	MemberstackAppId   string
 }
 
 type MemberstackAdmin struct {
@@ -38,11 +40,12 @@ type MemberstackAdmin struct {
 	httpJwksResponse string // TODO: Best way to memoize?
 	jwtParser        jwt.Parser
 	jwksKeyfunc      keyfunc.Keyfunc
+	httpClient       http.Client
 }
 
-func (a MemberstackAdmin) fetchJwks() (string, error) {
+func (a *MemberstackAdmin) fetchJwks() (string, error) { // TODO: does it need to be a pointer?
 	slog.Info("Fetching JWKS...", "url", a.Options.JWKSEndpoint)
-	res, err := http.Get(a.Options.JWKSEndpoint)
+	res, err := a.httpClient.Get(a.Options.JWKSEndpoint)
 	if err != nil {
 		slog.Error("Unable to HTTP GET JWKS")
 		return "", err
@@ -104,14 +107,14 @@ func (a *MemberstackAdmin) getJwksKeyfunc(updateCache bool) (keyfunc.Keyfunc, er
 }
 
 // GetJwksKeyfunc fetches the JWKS from the HTTP server, parses it into a key
-// function jwt.Parse understands, and caches it on MemberstackAdmin.
+// function [jwt.Parse] understands, and caches it on [MemberstackAdmin].
 // Subsequent calls returns the cached value.
 func (a *MemberstackAdmin) GetJwksKeyfunc() (keyfunc.Keyfunc, error) {
 	return a.getJwksKeyfunc(false)
 }
 
-// GetLatestJwksKeyfunc does the same as GetJwksKeyfunc() but always fetches
-// from the HTTP server, updating the local cache along the way.
+// GetLatestJwksKeyfunc does the same as [MemberstackAdmin.GetJwksKeyfunc] but
+// always fetches from the HTTP server, updating the local cache along the way.
 func (a *MemberstackAdmin) GetLatestJwksKeyfunc() (keyfunc.Keyfunc, error) {
 	return a.getJwksKeyfunc(true)
 }
@@ -134,6 +137,9 @@ func NewMemberstackAdmin(o Options) MemberstackAdmin {
 	if o.JWKSEndpoint == "" {
 		o.JWKSEndpoint = JWKS_ENDPOINT
 	}
+	if o.HTTPTimeoutSeconds == 0 {
+		o.HTTPTimeoutSeconds = 10
+	}
 
 	ma := MemberstackAdmin{Options: o}
 
@@ -144,11 +150,15 @@ func NewMemberstackAdmin(o Options) MemberstackAdmin {
 	// TODO: Should my jwtParser also be a pointer?
 	ma.jwtParser = *jwt.NewParser(jwtParserOpts...)
 
+	ma.httpClient = http.Client{
+		Timeout: time.Duration(o.HTTPTimeoutSeconds) * time.Second,
+	}
+
 	return ma
 }
 
 // GetMemberstackClaims is a utility function to correctly type the verified
-// jwt.Token.Claims to Memberstack-specific JWT format
+// [jwt.Token.Claims] to Memberstack-specific JWT format
 func GetMemberstackClaims(token *jwt.Token) *MemberstackJwtClaims {
 	return token.Claims.(*MemberstackJwtClaims)
 }
