@@ -2,6 +2,8 @@ package admin
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -13,6 +15,10 @@ import (
 
 const JWKS_ENDPOINT = "http://member-jwt.s3-website-us-east-1.amazonaws.com/"
 const ISSUER = "https://api.memberstack.com"
+
+var (
+	ErrBadJwks = errors.New("bad JWKS")
+)
 
 type MemberstackJwtClaims struct {
 	MemberID string `json:"id,omitempty"`
@@ -34,51 +40,69 @@ type MemberstackAdmin struct {
 	jwksKeyfunc      keyfunc.Keyfunc
 }
 
-func (a MemberstackAdmin) fetchJwks() string {
+func (a MemberstackAdmin) fetchJwks() (string, error) {
 	slog.Info("Fetching JWKS...", "url", a.Options.JWKSEndpoint)
 	res, err := http.Get(a.Options.JWKSEndpoint)
 	if err != nil {
-		panic("Unable to HTTP GET JWKS")
+		slog.Error("Unable to HTTP GET JWKS")
+		return "", err
 	}
 	defer res.Body.Close()
 
 	buf, err := io.ReadAll(res.Body)
 	if err != nil {
-		panic("Unable to read JWKS response body to byte array")
+		slog.Error("Unable to read JWKS response body to byte array")
+		return "", err
 	}
 
 	if res.StatusCode != http.StatusOK {
-		slog.Error("Non-200 status code", "body", buf)
-		panic("Non-200 status code from JWKS endpoint")
+		slog.Error("Non-200 status code", "body", buf, "status", res.StatusCode)
+		return "", fmt.Errorf("Non-200 status code from JWKS endpoint (got %d)", res.StatusCode)
 	}
 	// TODO: check response encoding?
 	body := strings.TrimSpace(string(buf))
-	return body
+	return body, nil
 }
 
-func (a *MemberstackAdmin) getHttpJwksResponse() string {
+func (a *MemberstackAdmin) getHttpJwksResponse() (string, error) {
 	// TODO: take advantage of jwkset's own HTTP refreshing goroutine features
 	if a.httpJwksResponse == "" {
-		a.httpJwksResponse = a.fetchJwks()
+		jwks, err := a.fetchJwks()
+		if err != nil {
+			slog.Error("Unable to fetch JWKS: ", "error", err)
+			return "", err
+		}
+		a.httpJwksResponse = jwks
 	}
-	return a.httpJwksResponse
+	return a.httpJwksResponse, nil
 }
 
-func (a *MemberstackAdmin) getJwksKeyfunc() keyfunc.Keyfunc {
+func (a *MemberstackAdmin) getJwksKeyfunc() (keyfunc.Keyfunc, error) {
 	if a.jwksKeyfunc == nil {
 		slog.Info("No keyfunc cached. Getting it now")
-		k, err := keyfunc.NewJWKSetJSON(json.RawMessage(a.getHttpJwksResponse()))
+		jwks, err := a.getHttpJwksResponse()
+		if err != nil {
+			slog.Error("Failed to get JWKS", "error", err)
+			return nil, err
+		}
+		k, err := keyfunc.NewJWKSetJSON(json.RawMessage(jwks))
 		if err != nil {
 			slog.Error("Failed to create a keyfunc.Keyfunc", "error", err)
-			panic(err)
+			return nil, err
 		}
 		a.jwksKeyfunc = k
 	}
-	return a.jwksKeyfunc
+	return a.jwksKeyfunc, nil
 }
 
 func (a *MemberstackAdmin) VerifyToken(tokenString string) (*jwt.Token, error) {
-	token, err := a.jwtParser.ParseWithClaims(tokenString, &MemberstackJwtClaims{}, a.getJwksKeyfunc().Keyfunc)
+	k, err := a.getJwksKeyfunc()
+	if err != nil {
+		return &jwt.Token{
+			Valid: false,
+		}, fmt.Errorf("%w: %w", ErrBadJwks, err)
+	}
+	token, err := a.jwtParser.ParseWithClaims(tokenString, &MemberstackJwtClaims{}, k.Keyfunc)
 	return token, err
 }
 

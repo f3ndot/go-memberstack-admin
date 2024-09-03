@@ -181,3 +181,23 @@ func TestVerifyToken_InvalidIssuer(t *testing.T) {
 	assert.ErrorIs(t, err, jwt.ErrTokenInvalidIssuer)
 	assert.False(t, token.Valid)
 }
+
+func TestVerifyToken_JWKSServerError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte("I'm having a bad day"))
+	}))
+	defer server.Close()
+
+	a := admin.NewMemberstackAdmin(admin.Options{
+		JWKSEndpoint:     server.URL,
+		Issuer:           "something-else",
+		MemberstackAppId: "app_clztbqqjh00450ss51dw00vy7",
+	})
+
+	token, err := a.VerifyToken(TEST_VALID_MEMBERSTACK_JWT)
+
+	assert.ErrorIs(t, err, admin.ErrBadJwks)
+	assert.EqualError(t, err, "bad JWKS: Non-200 status code from JWKS endpoint (got 502)")
+	assert.False(t, token.Valid)
+}

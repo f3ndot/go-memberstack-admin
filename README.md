@@ -21,7 +21,7 @@ a := admin.NewMemberstackAdmin(admin.Options{
 token, err := a.VerifyToken("eyJhbGc...jEifQ")
 
 fmt.Println("is valid:", token.Valid, ", error:", err
-fmt.Println("member ID:", admin.GetMemberstackClaims(token).MemberID, ", error:", err)
+fmt.Println("member ID:", admin.GetMemberstackClaims(token).MemberID)
 ```
 
 Or via the examples:
