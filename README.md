@@ -1,5 +1,7 @@
 # go-memberstack-admin
 
+[![build](https://github.com/f3ndot/go-memberstack-admin/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/f3ndot/go-memberstack-admin/actions/workflows/build.yml)
+
 A [go](http://www.golang.org/) (or 'golang' for search engine friendliness) port of npm's [`@memberstack/admin`](https://www.npmjs.com/package/@memberstack/admin).
 
 🐣 This is baby's first go module, so please: PR's welcome! 🙏
