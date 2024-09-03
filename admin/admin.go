@@ -77,26 +77,47 @@ func (a *MemberstackAdmin) getHttpJwksResponse() (string, error) {
 	return a.httpJwksResponse, nil
 }
 
-func (a *MemberstackAdmin) getJwksKeyfunc() (keyfunc.Keyfunc, error) {
-	if a.jwksKeyfunc == nil {
-		slog.Info("No keyfunc cached. Getting it now")
+func (a *MemberstackAdmin) getJwksKeyfunc(updateCache bool) (keyfunc.Keyfunc, error) {
+	if a.jwksKeyfunc == nil || updateCache {
+		slog.Info("No keyfunc cached or updateCache=true. Getting it now")
 		jwks, err := a.getHttpJwksResponse()
 		if err != nil {
 			slog.Error("Failed to get JWKS", "error", err)
-			return nil, err
+			if a.jwksKeyfunc == nil {
+				return nil, err
+			} else {
+				return a.jwksKeyfunc, fmt.Errorf("update cache failed: %w", err)
+			}
 		}
 		k, err := keyfunc.NewJWKSetJSON(json.RawMessage(jwks))
 		if err != nil {
 			slog.Error("Failed to create a keyfunc.Keyfunc", "error", err)
-			return nil, err
+			if a.jwksKeyfunc == nil {
+				return nil, err
+			} else {
+				return a.jwksKeyfunc, fmt.Errorf("update cache failed: %w", err)
+			}
 		}
 		a.jwksKeyfunc = k
 	}
 	return a.jwksKeyfunc, nil
 }
 
+// GetJwksKeyfunc fetches the JWKS from the HTTP server, parses it into a key
+// function jwt.Parse understands, and caches it on MemberstackAdmin.
+// Subsequent calls returns the cached value.
+func (a *MemberstackAdmin) GetJwksKeyfunc() (keyfunc.Keyfunc, error) {
+	return a.getJwksKeyfunc(false)
+}
+
+// GetLatestJwksKeyfunc does the same as GetJwksKeyfunc() but always fetches
+// from the HTTP server, updating the local cache along the way.
+func (a *MemberstackAdmin) GetLatestJwksKeyfunc() (keyfunc.Keyfunc, error) {
+	return a.getJwksKeyfunc(true)
+}
+
 func (a *MemberstackAdmin) VerifyToken(tokenString string) (*jwt.Token, error) {
-	k, err := a.getJwksKeyfunc()
+	k, err := a.GetJwksKeyfunc()
 	if err != nil {
 		return &jwt.Token{
 			Valid: false,

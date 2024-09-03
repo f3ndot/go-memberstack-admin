@@ -6,6 +6,16 @@ A [go](http://www.golang.org/) (or 'golang' for search engine friendliness) port
 
 🐣 This is baby's first go module, so please: PR's welcome! 🙏
 
+## Install
+
+```bash
+go get github.com/f3ndot/go-memberstack-admin
+```
+
+```go
+import "github.com/f3ndot/go-memberstack-admin/admin"
+```
+
 ## Usage
 
 _Check out [cmd/examples](./cmd/examples/) for detailed usage_
