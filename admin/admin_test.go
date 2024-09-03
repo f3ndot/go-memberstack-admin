@@ -107,12 +107,12 @@ func TestVerifyToken(t *testing.T) {
 	assert.NotEmpty(t, signedJwt)
 	log.Printf("Generated test JWT %s", signedJwt)
 
-	admin := admin.NewMemberstackAdmin(admin.Options{
+	a := admin.NewMemberstackAdmin(admin.Options{
 		JWKSEndpoint:     server.URL,
 		MemberstackAppId: "app_someid",
 	})
-	token1, err1 := admin.VerifyToken(signedJwt)
-	token2, err2 := admin.VerifyToken(signedJwt)
+	token1, err1 := a.VerifyToken(signedJwt)
+	token2, err2 := a.VerifyToken(signedJwt)
 
 	assert.NoError(t, err1)
 	assert.NoError(t, err2)
@@ -130,17 +130,17 @@ func TestVerifyToken_ExpiredToken(t *testing.T) {
 	}))
 	defer server.Close()
 
-	admin := admin.NewMemberstackAdmin(admin.Options{
+	a := admin.NewMemberstackAdmin(admin.Options{
 		JWKSEndpoint:     server.URL,
 		MemberstackAppId: "app_clztbqqjh00450ss51dw00vy7",
 	})
 
-	token, err := admin.VerifyToken(TEST_VALID_MEMBERSTACK_JWT)
+	token, err := a.VerifyToken(TEST_VALID_MEMBERSTACK_JWT)
 
 	assert.ErrorIs(t, err, jwt.ErrTokenInvalidClaims)
 	assert.ErrorIs(t, err, jwt.ErrTokenExpired)
 	assert.False(t, token.Valid)
-	assert.Equal(t, token.Claims.(jwt.MapClaims)["id"], "mem_sb_cm0l6tg1400l40ssa6wpx224r")
+	assert.Equal(t, admin.GetMemberstackClaims(token).MemberID, "mem_sb_cm0l6tg1400l40ssa6wpx224r")
 }
 
 func TestVerifyToken_InvalidAudience(t *testing.T) {
@@ -150,12 +150,12 @@ func TestVerifyToken_InvalidAudience(t *testing.T) {
 	}))
 	defer server.Close()
 
-	admin := admin.NewMemberstackAdmin(admin.Options{
+	a := admin.NewMemberstackAdmin(admin.Options{
 		JWKSEndpoint:     server.URL,
 		MemberstackAppId: "app_some-other-app-id",
 	})
 
-	token, err := admin.VerifyToken(TEST_VALID_MEMBERSTACK_JWT)
+	token, err := a.VerifyToken(TEST_VALID_MEMBERSTACK_JWT)
 
 	assert.ErrorIs(t, err, jwt.ErrTokenInvalidClaims)
 	assert.ErrorIs(t, err, jwt.ErrTokenInvalidAudience)
@@ -169,13 +169,13 @@ func TestVerifyToken_InvalidIssuer(t *testing.T) {
 	}))
 	defer server.Close()
 
-	admin := admin.NewMemberstackAdmin(admin.Options{
+	a := admin.NewMemberstackAdmin(admin.Options{
 		JWKSEndpoint:     server.URL,
 		Issuer:           "something-else",
 		MemberstackAppId: "app_clztbqqjh00450ss51dw00vy7",
 	})
 
-	token, err := admin.VerifyToken(TEST_VALID_MEMBERSTACK_JWT)
+	token, err := a.VerifyToken(TEST_VALID_MEMBERSTACK_JWT)
 
 	assert.ErrorIs(t, err, jwt.ErrTokenInvalidClaims)
 	assert.ErrorIs(t, err, jwt.ErrTokenInvalidIssuer)

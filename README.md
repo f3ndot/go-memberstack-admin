@@ -20,7 +20,8 @@ a := admin.NewMemberstackAdmin(admin.Options{
 })
 token, err := a.VerifyToken("eyJhbGc...jEifQ")
 
-fmt.Println("is valid:", token.Valid, ", error:", err)
+fmt.Println("is valid:", token.Valid, ", error:", err
+fmt.Println("member ID:", admin.GetMemberstackClaims(token).MemberID, ", error:", err)
 ```
 
 Or via the examples:
@@ -31,7 +32,7 @@ go run cmd/examples/verify_token.go -aud app_clzb... eyJhbGc...jEifQ
 
 ## TODO List
 
-- [ ] Tests 😅
+- [x] Tests 😅
 - [ ] Feature parity with `@memberstack/admin`
 - [ ] Add own errors for fetching JWKS failure conditions
 - [ ] Improve JWKS lifecycle (refreshing)

@@ -1,13 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/f3ndot/go-memberstack-admin/admin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func main() {
@@ -38,49 +38,12 @@ func main() {
 		fmt.Println("**INVALID** token details (claims):")
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		for claim, rawValue := range claims {
-			var value any
-			switch claim {
-			case "aud":
-				v, err := claims.GetAudience()
-				if err != nil {
-					value = rawValue
-				} else {
-					value = v
-				}
-			case "exp":
-				v, err := claims.GetExpirationTime()
-				if err != nil {
-					value = rawValue
-				} else {
-					value = v
-				}
-			case "iat":
-				v, err := claims.GetIssuedAt()
-				if err != nil {
-					value = rawValue
-				} else {
-					value = v
-				}
-			case "iss":
-				v, err := claims.GetIssuer()
-				if err != nil {
-					value = rawValue
-				} else {
-					value = v
-				}
-			case "sub":
-				v, err := claims.GetSubject()
-				if err != nil {
-					value = rawValue
-				} else {
-					value = v
-				}
-			default:
-				value = rawValue
-			}
-			fmt.Printf("  %s: %v\n", claim, value)
-		}
-	}
+	claims := admin.GetMemberstackClaims(token)
+	claimsJson, _ := json.MarshalIndent(claims, "", "  ")
+	fmt.Printf("%s\n\n", claimsJson)
+
+	expTime, _ := claims.GetExpirationTime()
+	fmt.Printf("  exp: %v\n", expTime)
+	iatTime, _ := claims.GetIssuedAt()
+	fmt.Printf("  iat: %v\n", iatTime)
 }
